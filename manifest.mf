@@ -1,0 +1,2 @@
+main-class: com.bc30138.geneticalg.GA
+class-path: lib/geneticalg.jar
