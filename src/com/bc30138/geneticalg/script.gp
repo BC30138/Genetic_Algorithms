@@ -1,0 +1,1 @@
+plot 'out/points.dat' u 1:2 w p, (sin(2*x)/(x*x))
