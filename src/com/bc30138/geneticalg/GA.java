@@ -1,25 +1,67 @@
 package com.bc30138.geneticalg;
 
 import java.util.*;
-
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
-
 import java.io.*;
 import javafx.util.Pair; 
 
 
-public class GA {
+class point
+{
+    Vector<Integer> binary_x;
+    Double x_value;
+    Double y_value;
+};
 
+public class GA {
+    
     int bit_number;
-    double left_, right_;
-    Vector<Vector<Integer>> binary_numbers = new Vector<Vector<Integer>>();
-    Vector<Vector<Integer>> temp_numbers = new Vector<Vector<Integer>>();
-    Vector<Pair<Double,Double>> points = new Vector<>(); 
-    double summ;
-    Pair<Double,Double> min;
-    Vector<Integer> bin_min;
-    double max;
     String line_func;
+    Vector<point> points = new Vector<point>();
+    Vector<point> temp_points = new Vector<point>();
+    double summ;
+    double left_, right_;
+
+    private point init_point(Vector<Integer> bin)
+    {
+        point new_point = new point();
+        new_point.binary_x = bin;
+        new_point.x_value = bin_to_num(bin);
+        new_point.y_value = func(new_point.x_value);
+        return new_point;
+    }
+
+    private double func(double x) 
+    { 
+        line_func = "(sin(2*x)/(x*x))";
+        return Math.sin(2 * x) / Math.pow(x, 2); 
+    }
+
+    private double bin_to_num(Vector<Integer> binary_num)
+    {
+        double number = 0;
+
+        for (int it = 0; it < bit_number; ++it)
+        {
+            number += binary_num.get(it) * Math.pow(2, it);
+        }
+
+        return left_ + number * (right_ - left_) / (Math.pow(2, bit_number) - 1);
+    }
+    
+    private point randomizer()
+    {
+        point new_point = new point();
+        Random random_ = new Random();
+        new_point.binary_x = new Vector<Integer>(bit_number);
+        for(int i = 0; i < bit_number; ++i)
+        {
+            int val = random_.nextBoolean() ? 1 : 0;
+            new_point.binary_x.addElement(val);
+        }
+        new_point.x_value = bin_to_num(new_point.binary_x);
+        new_point.y_value = func(new_point.x_value);
+        return new_point;
+    } 
 
     public void plot()
     {
@@ -35,176 +77,168 @@ public class GA {
          }
     }
 
-    private double func(double x) 
-    { 
-        line_func = "sin(2*x) / (x * x)";
-        return Math.sin(2 * x) / Math.pow(x, 2); 
-    }
-
     public void to_file(PrintWriter printWriter)
     {
         for (int it = 0; it < points.size(); ++it)
         {
-            printWriter.printf("%.4f \t %.4f \n",points.get(it).getKey(), points.get(it).getValue());
+            printWriter.printf("%.4f \t %.4f \n",points.get(it).x_value, points.get(it).y_value);
         }
-        printWriter.print(summ + "\t" + max);
         printWriter.print("\n\n");
     }
 
-    public GA(int strength, double precission, double left, double right, double cros_prob, double mut_prob)
+    public GA(int strength, double precision, int step_count, double left, double right, double cros_prob, double mut_prob)
     {
         right_ = right;
         left_ = left;
+        summ = 0;
 
         bit_number = (int)Math.ceil(
-            Math.log((right - left) / precission) /
+            Math.log((right - left) / precision) /
             Math.log(2)
             );
 
         for (int it = 0; it < strength; ++it)
         {
-            binary_numbers.addElement(randomizer());
-            Pair<Double,Double> temp = new Pair<>(bit_to_num(binary_numbers.get(it)), 
-                                            func(bit_to_num(binary_numbers.get(it))));
+            point temp = new point();
+            temp = randomizer();
             points.addElement(temp);
+            summ += temp.y_value;
         } 
 
         try {
             FileWriter fileWriter = new FileWriter("out/points.dat");
             PrintWriter printWriter = new PrintWriter(fileWriter);
             to_file(printWriter);
+            sort_points();
 
-            update_min_max_summ();
-            
-            // while ( (func(max + precission) > func(max) ) || (func(max - precission) > func(max)) )
-            // {
+            for (int it = 0; it < step_count; ++it)
+            {
             reproduction();
             crossing(cros_prob);
             mutation(mut_prob);
-            screenings(strength, precission);
+            screenings(strength, precision);
             to_file(printWriter);
-            // plot();
-            // }
+            }
             printWriter.close();
         }   catch (final IOException e) {
             e.printStackTrace();
         }
+        plot();
     }  
+
+    private void sort_points()
+    {
+        Collections.sort(points, 
+                        new Comparator<point>() {
+                            @Override
+                            public int compare(point a, point b)
+                            {
+                                return a.y_value < b.y_value ? -1 : 0;
+                            }
+                        }
+        );
+    }
 
     private void reproduction()
     {
-        temp_numbers.clear();
+        temp_points.clear();
 
-        for (int it = 0; it < binary_numbers.size(); ++it)
+        for (int it = 0; it < points.size(); ++it)
         {
             int wheel;
-            if (min.getValue() < 0) wheel = (int)Math.round( (points.get(it).getValue() + min.getValue()) 
-                                            * binary_numbers.size() / (summ + binary_numbers.size() * min.getValue()) );
-            else wheel = (int)Math.round( points.get(it).getValue() * binary_numbers.size() / summ );
+            wheel = (int)Math.round( points.get(it).y_value  / (summ / points.size()) );
+            // if (points.get(0).y_value < 0) wheel = (int)Math.round( (points.get(it).y_value + Math.abs(points.get(0).y_value)) 
+                                            // * points.size() / (summ + points.size() * Math.abs(points.get(0).y_value)) );
+            // else wheel = (int)Math.round( points.get(it).y_value * points.size() / summ );
             for (int jt = 0; jt < wheel; ++jt)
             {
-            temp_numbers.addElement(binary_numbers.get(it));
+            temp_points.addElement(points.get(it));
             }
         }
     }
 
-    private void update_min_max_summ()
+    private boolean iseq_bin(Vector<Integer> a, Vector<Integer> b)
     {
-        summ = 0;
-        max = 0;
-        min = new Pair<Double,Double>(points.get(0).getKey(),points.get(0).getValue());
-        for (int it = 1; it < points.size(); ++it)
+        boolean Is_Equal = true;
+        for (int it = 0; it < bit_number; ++it)
         {
-            summ += points.get(it).getValue();
-            if (points.get(it).getValue() > max) max = points.get(it).getValue();
-            if (points.get(it).getValue() < min.getValue()) 
+            if (a.get(it) != b.get(it)) 
             {
-                min = points.get(it);
-                bin_min = binary_numbers.get(it);
-            } 
-            
+                Is_Equal = false; 
+                it = bit_number;
+            }
         }
+        return Is_Equal; 
     }
 
     private void crossing(double probability) //not only once
     {
-        if( new Random().nextDouble() <= probability) {  
-            int first_p_n = (int)(Math.random() * (temp_numbers.size()));
-            int second_p_n = 0;
-            while (first_p_n == second_p_n) {second_p_n = (int)(Math.random() * (temp_numbers.size()));}
-            Vector<Integer> first_p = temp_numbers.get(first_p_n);
-            Vector<Integer> second_p = temp_numbers.get(second_p_n);
-            for (int it = (int)(1 + Math.random() * (bit_number - 1)); it < bit_number; ++it)
-            {
-                Integer swap_ = first_p.get(it);
-                first_p.set(it, second_p.get(it)); 
-                second_p.set(it, swap_);
-            }
-            Pair<Double,Double> first_point = new Pair<>(bit_to_num(temp_numbers.get(first_p_n)), 
-                                                func(bit_to_num(temp_numbers.get(first_p_n))));
-            Pair<Double,Double> second_point = new Pair<>(bit_to_num(temp_numbers.get(second_p_n)), 
-                                                func(bit_to_num(temp_numbers.get(second_p_n))));                 
-            binary_numbers.addElement(first_p);
-            binary_numbers.addElement(second_p);
-            points.addElement(first_point);
-            points.addElement(second_point);
+        for (int it = 0; it < points.size(); ++it)
+        {
+                if( new Random().nextDouble() <= probability) {
+                    int jt = (int)(Math.random() * temp_points.size());
+                    while (it == jt) {jt = (int)(Math.random() * temp_points.size());}    
+                    Vector<Integer> first_bin = new Vector<>();
+                    Vector<Integer> second_bin = new Vector<>();
+                    first_bin = points.get(it).binary_x;
+                    second_bin = temp_points.get(jt).binary_x;
+                    if (!iseq_bin(first_bin, second_bin))    
+                    {
+                        int rand = (int)(1 + Math.random() * (bit_number - 1));
+                        for (int k = rand; k < bit_number; ++k)
+                        {
+                            int swap_ = first_bin.get(k);
+                            first_bin.set(k, second_bin.get(k)); 
+                            second_bin.set(k, swap_);
+                        }
+                        point first_point = new point();
+                        point second_point = new point();        
+                        first_point = init_point(first_bin);
+                        second_point = init_point(second_bin);
+                        points.addElement(first_point);
+                        points.addElement(second_point);
+                    }
+                }
          }
     }
 
+    private void udpate_summ()
+    {
+        summ = 0; 
+        for (int it = 0; it < points.size(); ++it)
+        {
+            summ += points.get(it).y_value;
+        }
+    }
+    
     private void mutation(double probability)
     {
-        if( new Random().nextDouble() <= probability) {
-        int it = (int)(Math.random() * (temp_numbers.size()));
-        int k =  (int)(Math.random() * (bit_number));
-        Vector<Integer> temp = temp_numbers.get(it);
-        if (temp.get(k) == 0) temp.set(k, 1);
-        else temp.set(k,0);
-        Pair<Double,Double> new_point = new Pair<>(bit_to_num(temp_numbers.get(it)), 
-                                            func(bit_to_num(temp_numbers.get(it))));                 
-        binary_numbers.addElement(temp);
-        points.addElement(new_point);
+        for (int it = 0; it < temp_points.size(); ++it)
+        {
+            if( new Random().nextDouble() <= probability) {
+            int k =  (int)(Math.random() * (bit_number));
+            Vector<Integer> temp = temp_points.get(it).binary_x;
+            if (temp.get(k) == 0) temp.set(k, 1);
+            else temp.set(k,0);
+            point new_point = new point();
+            new_point = init_point(temp);                 
+            points.addElement(new_point);
+            }
         }
     }
 
     private void screenings(double strength, double precision)
     {
-        // System.out.println(points.size() + "\t" + binary_numbers.size() + "\t" + strength);
+        sort_points();
         while (points.size() > strength)
         {
-            update_min_max_summ();
-            points.remove(min);
-            binary_numbers.remove(bin_min);
+            points.remove(0);
         }
-        // System.out.println(points.size() + "\t" + binary_numbers.size() + "\t" + strength);
-    }
-
-    private Vector<Integer> randomizer()
-    {
-        Random random_ = new Random();
-        Vector<Integer> number = new Vector<Integer>(bit_number);
-        for(int i = 0; i < bit_number; ++i)
-        {
-            int val = random_.nextBoolean() ? 1 : 0;
-            number.addElement(val);
-        }
-        return number;
-    } 
-
-    private double bit_to_num(Vector<Integer> binary_num)
-    {
-        double number = 0;
-
-        for (int jt = 0; jt < bit_number; ++jt)
-        {
-            number += binary_num.get(jt) * Math.pow(2, jt);
-        }
-
-        return left_ + number * (right_ - left_) / (Math.pow(2, bit_number) - 1);
+        udpate_summ();
     }
 
     public static void main(String[] args)
     {
-        GA test = new GA(10, 0.01, -20, -3.1, 1, 0.001);
+        GA test = new GA(15, 0.001, 150, -20, -3.1, 0.5, 0.001);
     }
 }
-
