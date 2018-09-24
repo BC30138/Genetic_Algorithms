@@ -1,23 +1,44 @@
 package com.bc30138.geneticalg;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.io.*;
 import javafx.util.Pair; 
 
 
-class point
+class point implements Comparable
 {
     Vector<Integer> binary_x;
     Double x_value;
     Double y_value;
+
+    public int compareTo(Object o)
+	{
+        point e = (point) o;
+
+        int result = this.y_value.compareTo(e.y_value);
+    
+        if (result < 0)
+        {
+            return -1;
+        }
+        else 
+        {
+            if (result == 0)
+            {
+                return 0;
+            } 
+            else return 1;
+        }   
+	}
 };
 
-public class GA {
-    
+public class GA extends point{
     int bit_number;
     String line_func;
     Vector<point> points = new Vector<point>();
-    Vector<point> temp_points = new Vector<point>();
+    Vector<Integer> wheel_temp_p = new Vector<Integer>();
+    Vector<Integer> wheel_only_p = new Vector<Integer>();
     double summ;
     double left_, right_;
 
@@ -108,51 +129,46 @@ public class GA {
         try {
             FileWriter fileWriter = new FileWriter("out/points.dat");
             PrintWriter printWriter = new PrintWriter(fileWriter);
-            to_file(printWriter);
+            // to_file(printWriter);
             sort_points();
-
             for (int it = 0; it < step_count; ++it)
             {
+            to_file(printWriter);
             reproduction();
             crossing(cros_prob);
             mutation(mut_prob);
             screenings(strength, precision);
-            to_file(printWriter);
+            // to_file(printWriter);
             }
             printWriter.close();
         }   catch (final IOException e) {
             e.printStackTrace();
         }
         plot();
-    }  
+    }
 
     private void sort_points()
     {
-        Collections.sort(points, 
-                        new Comparator<point>() {
-                            @Override
-                            public int compare(point a, point b)
-                            {
-                                return a.y_value < b.y_value ? -1 : 0;
-                            }
-                        }
-        );
+        Collections.sort(points); 
     }
 
     private void reproduction()
     {
-        temp_points.clear();
+        wheel_only_p.clear();
+        wheel_temp_p.clear();
 
         for (int it = 0; it < points.size(); ++it)
         {
             int wheel;
-            wheel = (int)Math.round( points.get(it).y_value  / (summ / points.size()) );
-            // if (points.get(0).y_value < 0) wheel = (int)Math.round( (points.get(it).y_value + Math.abs(points.get(0).y_value)) 
-                                            // * points.size() / (summ + points.size() * Math.abs(points.get(0).y_value)) );
-            // else wheel = (int)Math.round( points.get(it).y_value * points.size() / summ );
-            for (int jt = 0; jt < wheel; ++jt)
+            wheel = (int)Math.round( (points.get(it).y_value + Math.abs(points.get(0).y_value)) 
+                                            * points.size() / (summ + points.size() * Math.abs(points.get(0).y_value)) );
+            if (wheel != 0) 
             {
-            temp_points.addElement(points.get(it));
+                wheel_only_p.addElement(it);
+                for (int jt = 0; jt < wheel; ++jt)
+                {
+                wheel_temp_p.addElement(it);
+                }
             }
         }
     }
@@ -173,31 +189,39 @@ public class GA {
 
     private void crossing(double probability) //not only once
     {
-        for (int it = 0; it < points.size(); ++it)
+        Vector<String> used = new Vector<String>();
+        for (int it = 0; it < wheel_only_p.size(); ++it)
         {
                 if( new Random().nextDouble() <= probability) {
-                    int jt = (int)(Math.random() * temp_points.size());
-                    while (it == jt) {jt = (int)(Math.random() * temp_points.size());}    
-                    Vector<Integer> first_bin = new Vector<>();
-                    Vector<Integer> second_bin = new Vector<>();
-                    first_bin = points.get(it).binary_x;
-                    second_bin = temp_points.get(jt).binary_x;
-                    if (!iseq_bin(first_bin, second_bin))    
-                    {
-                        int rand = (int)(1 + Math.random() * (bit_number - 1));
-                        for (int k = rand; k < bit_number; ++k)
+                    int jt =  ThreadLocalRandom.current().nextInt(0, wheel_temp_p.size());
+                    int find = used.indexOf(String.valueOf(wheel_only_p.get(it)) +
+                                         String.valueOf(wheel_temp_p.get(jt)));
+                    while ( (wheel_only_p.get(it) == wheel_temp_p.get(jt)) || (find != -1) ) 
                         {
-                            int swap_ = first_bin.get(k);
-                            first_bin.set(k, second_bin.get(k)); 
-                            second_bin.set(k, swap_);
-                        }
-                        point first_point = new point();
-                        point second_point = new point();        
-                        first_point = init_point(first_bin);
-                        second_point = init_point(second_bin);
-                        points.addElement(first_point);
-                        points.addElement(second_point);
+                            jt = ThreadLocalRandom.current().nextInt(0, wheel_temp_p.size());
+                            find = used.indexOf(String.valueOf(wheel_only_p.get(it)) +
+                                         String.valueOf(wheel_temp_p.get(jt)));
+                        }    
+                    used.addElement(String.valueOf(wheel_only_p.get(it)) + String.valueOf(wheel_temp_p.get(jt)));
+                    used.addElement(String.valueOf(wheel_temp_p.get(jt)) + String.valueOf(wheel_only_p.get(it)));
+                    Vector<Integer> first_bin = new Vector<>(bit_number);
+                    Vector<Integer> second_bin = new Vector<>(bit_number);
+                    first_bin = points.get(wheel_only_p.get(it)).binary_x;
+                    second_bin = points.get(wheel_temp_p.get(jt)).binary_x;
+                    int rand = ThreadLocalRandom.current().nextInt(1, bit_number);;
+                    for (int k = rand; k < bit_number; ++k)
+                    {
+                        int swap_ = first_bin.get(k);
+                        first_bin.set(k, second_bin.get(k)); 
+                        second_bin.set(k, swap_);
                     }
+                    point first_point = new point();
+                    point second_point = new point();        
+                    first_point = init_point(first_bin);
+                    second_point = init_point(second_bin);
+                    points.addElement(first_point);
+                    points.addElement(second_point);
+                    
                 }
          }
     }
@@ -213,13 +237,13 @@ public class GA {
     
     private void mutation(double probability)
     {
-        for (int it = 0; it < temp_points.size(); ++it)
+        for (int it = 0; it < wheel_temp_p.size(); ++it)
         {
             if( new Random().nextDouble() <= probability) {
             int k =  (int)(Math.random() * (bit_number));
-            Vector<Integer> temp = temp_points.get(it).binary_x;
+            Vector<Integer> temp = points.get(wheel_temp_p.get(it)).binary_x;
             if (temp.get(k) == 0) temp.set(k, 1);
-            else temp.set(k,0);
+            else temp.set(k, 0);
             point new_point = new point();
             new_point = init_point(temp);                 
             points.addElement(new_point);
@@ -239,6 +263,6 @@ public class GA {
 
     public static void main(String[] args)
     {
-        GA test = new GA(15, 0.001, 150, -20, -3.1, 0.5, 0.001);
+        GA test = new GA(20, 0.001, 30, -20, -3.1, 0.5, 0.01);
     }
 }
