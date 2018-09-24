@@ -6,13 +6,13 @@ import java.io.*;
 import javafx.util.Pair; 
 
 
-class point implements Comparable
+class point implements Comparable<point>
 {
     Vector<Integer> binary_x;
     Double x_value;
     Double y_value;
 
-    public int compareTo(Object o)
+    public int compareTo(point o)
 	{
         point e = (point) o;
 
@@ -33,7 +33,7 @@ class point implements Comparable
 	}
 };
 
-public class GA extends point{
+public class GA {
     int bit_number;
     String line_func;
     Vector<point> points = new Vector<point>();
@@ -109,6 +109,7 @@ public class GA extends point{
 
     public GA(int strength, double precision, int step_count, double left, double right, double cros_prob, double mut_prob)
     {
+        super();
         right_ = right;
         left_ = left;
         summ = 0;
@@ -263,6 +264,6 @@ public class GA extends point{
 
     public static void main(String[] args)
     {
-        GA test = new GA(20, 0.001, 30, -20, -3.1, 0.5, 0.01);
+        GA test = new GA(10, 0.001, 50, -20, -3.1, 0.5, 0.0001);
     }
 }
