@@ -4,15 +4,15 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.io.*;
 import javafx.util.Pair; 
+import java.math.BigDecimal;
 
-
-class point implements Comparable<point>
+class point implements Comparable<point> //Так как язык объектно-ориентированный - все делается средствами классов, это класс объекта точки
 {
-    Vector<Integer> binary_x;
-    Double x_value;
-    Double y_value;
+    Vector<Integer> binary_x; //двоичное значение x
+    Double x_value; //десятичное значение x
+    Double y_value; //двоичное значение y
 
-    public int compareTo(point o)
+    public int compareTo(point o) //оператор сравнения точек
 	{
         point e = (point) o;
 
@@ -33,16 +33,18 @@ class point implements Comparable<point>
 	}
 };
 
-public class GA {
-    int bit_number;
-    String line_func;
-    Vector<point> points = new Vector<point>();
-    Vector<Integer> wheel_temp_p = new Vector<Integer>();
-    Vector<Integer> wheel_only_p = new Vector<Integer>();
-    double summ;
-    double left_, right_;
+public class GA { //главный класс программы
+    int bit_number; //количество бит в двоичном представлении
+    String gnuplot_func; //второстепенная переменная для оформления графика
+    String line_func; //второстепенная переменная для оформления графика
+    Vector<point> points = new Vector<point>(); //точки популяции
+    Vector<Integer> wheel_temp_p = new Vector<Integer>(); //второстепенная переменная для оптимизации оператора кроссинговера
+    Vector<Integer> wheel_only_p = new Vector<Integer>(); //второстепенная переменная для оптимизации оператора кроссинговера
+    double summ; //сумма значений всех точек
+    int step_count_; //количество итераций
+    double left_, right_; //левая и правая граница
 
-    private point init_point(Vector<Integer> bin)
+    private point init_point(Vector<Integer> bin) //функция инициализации точки
     {
         point new_point = new point();
         new_point.binary_x = bin;
@@ -51,13 +53,14 @@ public class GA {
         return new_point;
     }
 
-    private double func(double x) 
+    private double func(double x) //вид функции
     { 
-        line_func = "(sin(2*x)/(x*x))";
+        gnuplot_func = "(sin(2*x)/(x*x))";
+        line_func = "sin(2x)/(x^2)";
         return Math.sin(2 * x) / Math.pow(x, 2); 
     }
 
-    private double bin_to_num(Vector<Integer> binary_num)
+    private double bin_to_num(Vector<Integer> binary_num)//функция перевода двоичного числа в десятичное
     {
         double number = 0;
 
@@ -69,7 +72,7 @@ public class GA {
         return left_ + number * (right_ - left_) / (Math.pow(2, bit_number) - 1);
     }
     
-    private point randomizer()
+    private point randomizer()//функция создания рандомной точки
     {
         point new_point = new point();
         Random random_ = new Random();
@@ -84,8 +87,27 @@ public class GA {
         return new_point;
     } 
 
-    public void plot()
+    public void plot() //функция построения графика
     {
+        try {
+            FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/geneticalg/script.gp");
+            PrintWriter gnuWriter = new PrintWriter(gnuscrWriter);
+            gnuWriter.print("set term gif animate delay 15 font 'Helvetica,12'\n");
+            gnuWriter.print("set xlabel 'X'\n");
+            gnuWriter.print("set ylabel 'Y'\n");
+            gnuWriter.print("set key spacing 1.5\n");
+            gnuWriter.print("set output 'searchprocess.gif'\n");
+            gnuWriter.printf("set xrange [%.1f:%.1f]\n", left_, right_); 
+            gnuWriter.print("set key left\n");
+            gnuWriter.printf("do for [i=0:%d] {\n",step_count_);
+            gnuWriter.print("plot" + gnuplot_func + "w li lw 1.5 lt rgb 'red' ti '" + line_func + 
+            "', 'out/points.dat' index i u 1:2 w p pt 7 ps 1 lc rgb 'blue' ti 'Extremum search'\n");
+            gnuWriter.print("}\n");
+            gnuWriter.close();
+        }   catch (final IOException e) {
+            e.printStackTrace();
+        }
+        
         final Runtime run = Runtime.getRuntime();
         try {
             String fpath = "gnuplot src/com/bc30138/geneticalg/script.gp";
@@ -98,7 +120,7 @@ public class GA {
          }
     }
 
-    public void to_file(PrintWriter printWriter)
+    public void to_file(PrintWriter printWriter) //вывод в файл
     {
         for (int it = 0; it < points.size(); ++it)
         {
@@ -107,19 +129,28 @@ public class GA {
         printWriter.print("\n\n");
     }
 
-    public GA(int strength, double precision, int step_count, double left, double right, double cros_prob, double mut_prob)
+    private void udpate_summ()//обновление значения суммы популяции
     {
-        super();
+        summ = 0; 
+        for (int it = 0; it < points.size(); ++it)
+        {
+            summ += points.get(it).y_value;
+        }
+    }
+
+    public GA(int strength, double precision, int step_count, double left, double right, double cros_prob, double mut_prob) //конструктор главного класса
+    {
+        step_count_ = step_count;
         right_ = right;
         left_ = left;
         summ = 0;
 
-        bit_number = (int)Math.ceil(
+        bit_number = (int)Math.ceil( 
             Math.log((right - left) / precision) /
             Math.log(2)
-            );
+            ); //вычисление количества бит в двоичном представлении
 
-        for (int it = 0; it < strength; ++it)
+        for (int it = 0; it < strength; ++it) //инициализация начальной популяции
         {
             point temp = new point();
             temp = randomizer();
@@ -127,38 +158,34 @@ public class GA {
             summ += temp.y_value;
         } 
 
+        int it_count = 0;
+        int it_flag = 0;
         try {
             FileWriter fileWriter = new FileWriter("out/points.dat");
             PrintWriter printWriter = new PrintWriter(fileWriter);
-            // to_file(printWriter);
-            sort_points();
-            for (int it = 0; it < step_count; ++it)
+            Collections.sort(points); 
+            for (int it = 0; it < step_count; ++it) //основной цикл (итерации изменяющие популяцию)
             {
             to_file(printWriter);
-            reproduction();
-            crossing(cros_prob);
-            mutation(mut_prob);
-            screenings(strength, precision);
-            // to_file(printWriter);
+            reproduction(); //вызов оператора репродукции
+            crossing(cros_prob); //вызов оператора кроссинговера
+            mutation(mut_prob); //вызов оператора мутации
+            screenings(strength, precision); //удаление точек
             }
             printWriter.close();
         }   catch (final IOException e) {
             e.printStackTrace();
         }
+        System.out.printf("max = %.3f\n", points.lastElement().y_value);
         plot();
     }
 
-    private void sort_points()
+    private void reproduction() //оператор репродукции
     {
-        Collections.sort(points); 
-    }
+        wheel_only_p.clear();//нужны, чтобы избежать скрещивания точки с собой
+        wheel_temp_p.clear();//
 
-    private void reproduction()
-    {
-        wheel_only_p.clear();
-        wheel_temp_p.clear();
-
-        for (int it = 0; it < points.size(); ++it)
+        for (int it = 0; it < points.size(); ++it) //инициализаци колеса рулетки
         {
             int wheel;
             wheel = (int)Math.round( (points.get(it).y_value + Math.abs(points.get(0).y_value)) 
@@ -174,26 +201,12 @@ public class GA {
         }
     }
 
-    private boolean iseq_bin(Vector<Integer> a, Vector<Integer> b)
-    {
-        boolean Is_Equal = true;
-        for (int it = 0; it < bit_number; ++it)
-        {
-            if (a.get(it) != b.get(it)) 
-            {
-                Is_Equal = false; 
-                it = bit_number;
-            }
-        }
-        return Is_Equal; 
-    }
-
-    private void crossing(double probability) //not only once
+    private void crossing(double probability) //оператор кроссинговера
     {
         Vector<String> used = new Vector<String>();
         for (int it = 0; it < wheel_only_p.size(); ++it)
         {
-                if( new Random().nextDouble() <= probability) {
+                if( new Random().nextDouble() <= probability) { //скрещивание происходит с некоторой вероятностью
                     int jt =  ThreadLocalRandom.current().nextInt(0, wheel_temp_p.size());
                     int find = used.indexOf(String.valueOf(wheel_only_p.get(it)) +
                                          String.valueOf(wheel_temp_p.get(jt)));
@@ -210,7 +223,7 @@ public class GA {
                     first_bin = points.get(wheel_only_p.get(it)).binary_x;
                     second_bin = points.get(wheel_temp_p.get(jt)).binary_x;
                     int rand = ThreadLocalRandom.current().nextInt(1, bit_number);;
-                    for (int k = rand; k < bit_number; ++k)
+                    for (int k = rand; k < bit_number; ++k)//непосредственно само скрещивание
                     {
                         int swap_ = first_bin.get(k);
                         first_bin.set(k, second_bin.get(k)); 
@@ -226,21 +239,12 @@ public class GA {
                 }
          }
     }
-
-    private void udpate_summ()
-    {
-        summ = 0; 
-        for (int it = 0; it < points.size(); ++it)
-        {
-            summ += points.get(it).y_value;
-        }
-    }
     
-    private void mutation(double probability)
+    private void mutation(double probability) //оператор мутации
     {
         for (int it = 0; it < wheel_temp_p.size(); ++it)
         {
-            if( new Random().nextDouble() <= probability) {
+            if( new Random().nextDouble() <= probability) {//мутация происходит с некоторой вероятностью
             int k =  (int)(Math.random() * (bit_number));
             Vector<Integer> temp = points.get(wheel_temp_p.get(it)).binary_x;
             if (temp.get(k) == 0) temp.set(k, 1);
@@ -252,9 +256,10 @@ public class GA {
         }
     }
 
-    private void screenings(double strength, double precision)
+    private void screenings(double strength, double precision) //удаление точек до тех пор пока не останется изначальное количество точек
     {
-        sort_points();
+        //точки сортируются по неубыванию, после чего первые элементы удаляются
+        Collections.sort(points); 
         while (points.size() > strength)
         {
             points.remove(0);
@@ -262,8 +267,14 @@ public class GA {
         udpate_summ();
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) //работа программы
     {
-        GA test = new GA(10, 0.001, 50, -20, -3.1, 0.5, 0.0001);
+        GA test = new GA(40, //размер популяции 
+        0.000001, //точность
+        50, //количество итераций
+        -20, -3.1, //границы
+        0.5, //вероятность кроссинговера
+        0.1 //вероятность мутации
+        );
     }
 }
