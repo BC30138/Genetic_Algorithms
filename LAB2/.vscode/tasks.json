@@ -1,0 +1,36 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "runner": "terminal",
+    "tasks": [
+        {
+            "label": "Build",
+            "command": "javac",
+            "isBuildCommand": true,
+            "isShellCommand": true,
+            "args": [
+                "-sourcepath", 
+                "src", 
+                "-d",
+                "bin", 
+                // "-classpath",
+                // "lib/JavaPlot.jar",
+                "src/com/bc30138/ga2/*.java",
+            ],
+            "problemMatcher": {
+                "owner": "external",
+                "fileLocation": ["absolute"],
+                "pattern": [
+                    {
+                        "regexp": "^(.+\\.java):(\\d):(?:\\s+(error)):(?:\\s+(.*))$",
+                        "file": 1,
+                        "location": 2,
+                        "severity": 3,
+                        "message": 4
+                    }
+                ]
+            }
+        }
+    ]
+}
