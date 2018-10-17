@@ -92,7 +92,7 @@ public class GA { //главный класс программы
         try {
             FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/geneticalg/script.gp");
             PrintWriter gnuWriter = new PrintWriter(gnuscrWriter);
-            gnuWriter.print("set term gif animate delay 15 font 'Helvetica,12'\n");
+            gnuWriter.print("set term gif animate delay 15 font 'Helvetica,20' size 1024,500\n");
             gnuWriter.print("set xlabel 'X'\n");
             gnuWriter.print("set ylabel 'Y'\n");
             gnuWriter.print("set key spacing 1.5\n");
@@ -100,8 +100,8 @@ public class GA { //главный класс программы
             gnuWriter.printf("set xrange [%.1f:%.1f]\n", left_, right_); 
             gnuWriter.print("set key left\n");
             gnuWriter.printf("do for [i=0:%d] {\n",step_count_);
-            gnuWriter.print("plot" + gnuplot_func + "w li lw 1.5 lt rgb 'red' ti '" + line_func + 
-            "', 'out/points.dat' index i u 1:2 w p pt 7 ps 1 lc rgb 'blue' ti 'Extremum search'\n");
+            gnuWriter.print("plot" + gnuplot_func + "w li lw 2 lt rgb 'red' ti '" + line_func + 
+            "', 'out/points.dat' index i u 1:2 w p pt 7 ps 1.5 lc rgb 'blue' ti 'Extremum search'\n");
             gnuWriter.print("}\n");
             gnuWriter.close();
         }   catch (final IOException e) {
@@ -124,7 +124,7 @@ public class GA { //главный класс программы
     {
         for (int it = 0; it < points.size(); ++it)
         {
-            printWriter.printf("%.4f \t %.4f \n",points.get(it).x_value, points.get(it).y_value);
+            printWriter.printf("%.4f \t %.7f \n",points.get(it).x_value, points.get(it).y_value);
         }
         printWriter.print("\n\n");
     }
@@ -176,7 +176,7 @@ public class GA { //главный класс программы
         }   catch (final IOException e) {
             e.printStackTrace();
         }
-        System.out.printf("max = %.3f\n", points.lastElement().y_value);
+        System.out.printf("max in (%.3f,%.3f)\n", points.lastElement().x_value, points.lastElement().y_value);
         plot();
     }
 
@@ -269,12 +269,12 @@ public class GA { //главный класс программы
 
     public static void main(String[] args) //работа программы
     {
-        GA test = new GA(40, //размер популяции 
-        0.000001, //точность
+        GA test = new GA(50, //размер популяции 
+        0.0000001, //точность
         50, //количество итераций
         -20, -3.1, //границы
         0.5, //вероятность кроссинговера
-        0.1 //вероятность мутации
+        0.001 //вероятность мутации
         );
     }
 }
