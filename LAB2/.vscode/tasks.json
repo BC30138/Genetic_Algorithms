@@ -1,11 +1,9 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "runner": "terminal",
     "tasks": [
         {
-            "label": "Build",
+            "label": "JavaBuild",
             "command": "javac",
             "isBuildCommand": true,
             "isShellCommand": true,
@@ -16,8 +14,12 @@
                 "bin", 
                 // "-classpath",
                 // "lib/JavaPlot.jar",
-                "src/com/bc30138/ga2/*.java",
+                "src/com/bc30138/ga/*.java",
+                // "${file}"
             ],
+            "presentation": {
+            "panel": "new"
+        },
             "problemMatcher": {
                 "owner": "external",
                 "fileLocation": ["absolute"],
@@ -31,6 +33,29 @@
                     }
                 ]
             }
+        },
+        {
+            "label": "JavaRun",
+            "command": "java",
+            "isBuildCommand": true,
+            "isShellCommand": true,
+            "args": [
+                "-classpath",
+                "bin:",
+                // "com.bc30138.ga2.${fileBasenameNoExtension}"
+                "com.bc30138.ga.GA"
+            ],
+            "problemMatcher": {}
+        },
+        {
+            "label": "JavaBuildRun",
+            "command": "bash",
+            "isBuildCommand": true,
+            "isShellCommand": true,
+            "args": [
+                "./compNstart.sh", 
+            ],
+            "problemMatcher": {}
         }
     ]
 }
