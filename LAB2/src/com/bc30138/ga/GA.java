@@ -11,7 +11,9 @@ class point implements Comparable<point> // класс точка
 
     public int compareTo(point o) // оператор сравнения точек
     {
-        int result = this.y_value.compareTo(o.y_value);
+        point e = (point) o;
+
+        int result = this.y_value.compareTo(e.y_value);
 
         if (result < 0) {
             return -1;
@@ -53,7 +55,7 @@ public class GA { // главный класс программы
         switch (dim_num) {
         case 1:
             try {
-                FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/ga2/script.gp");
+                FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/ga/script.gp");
                 PrintWriter gnuWriter = new PrintWriter(gnuscrWriter);
                 gnuWriter.print("set term gif animate delay 15 font 'Helvetica,20' size 1024,500\n");
                 gnuWriter.print("set xlabel 'X'\n");
@@ -63,7 +65,7 @@ public class GA { // главный класс программы
                 gnuWriter.printf("set xrange [%.1f:%.1f]\n", left, right);
                 gnuWriter.print("set key left\n");
                 gnuWriter.printf("do for [i=0:%d] {\n", step_count);
-                gnuWriter.print("plot" + gnuplot_func + "w li lw 2 lt rgb 'red' ti '" + line_func
+                gnuWriter.print("plot " + gnuplot_func + " w li lw 2 lt rgb 'red' ti '" + line_func
                         + "', 'out/points.dat' index i u 1:2 w p pt 7 ps 1.5 lc rgb 'blue' ti 'Extremum search'\n");
                 gnuWriter.print("}\n");
                 gnuWriter.close();
@@ -73,20 +75,28 @@ public class GA { // главный класс программы
             break;
         case 2:
             try {
-                FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/ga2/script.gp");
+                FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/ga/script.gp");
                 PrintWriter gnuWriter = new PrintWriter(gnuscrWriter);
                 gnuWriter.print("set term gif animate delay 15 font 'Helvetica,20' size 1024,500\n");
+                // gnuWriter.print("set pm3d \n");
+                // gnuWriter.print("set hidden3d \n");
                 gnuWriter.print("set xlabel 'X'\n");
                 gnuWriter.print("set ylabel 'Y'\n");
                 gnuWriter.print("set zlabel 'Z'\n");
+                gnuWriter.print("set ztics (0,150,300) \n");
+                gnuWriter.print("set view 30,40 \n");
                 gnuWriter.print("set key spacing 1.5\n");
                 gnuWriter.print("set output 'searchprocess.gif'\n");
+                gnuWriter.printf("set zrange [-0.5:400]\n");
                 gnuWriter.printf("set xrange [%.1f:%.1f]\n", left, right);
+                gnuWriter.printf("set yrange [%.1f:%.1f]\n", left, right);
                 gnuWriter.print("set key left\n");
                 gnuWriter.printf("do for [i=0:%d] {\n", step_count);
-                gnuWriter.print("splot" + gnuplot_func + "w li lw 2 lt rgb 'red' ti '" + line_func
-                        + "', 'out/points.dat' index i u 1:2:3 w p pt 7 ps 1.5 lc rgb 'blue' ti 'Extremum search'\n");
+                gnuWriter.print("splot" + gnuplot_func + "w pm3d ti '" + line_func
+                        + "', 'out/points.dat' index i u 1:2:3 w p pt 7 ps 1.5 lc rgb 'red' ti 'Extremum search'\n");
                 gnuWriter.print("}\n");
+                gnuWriter.print("}\n");
+
                 gnuWriter.close();
             } catch (final IOException e) {
                 e.printStackTrace();
@@ -96,7 +106,7 @@ public class GA { // главный класс программы
 
         final Runtime run = Runtime.getRuntime();
         try {
-            String fpath = "gnuplot src/com/bc30138/ga2/script.gp";
+            String fpath = "gnuplot src/com/bc30138/ga/script.gp";
             Process p = run.exec(fpath);
             int result = p.waitFor();
         } catch (final IOException e) {
@@ -124,15 +134,15 @@ public class GA { // главный класс программы
             this.dim_error_flag = false;
             this.plot_flag = true;
             this.dim_num = dim_num;
-            this.gnuplot_func = "5*x*x";
-            this.line_func = "5(x^2)";
+            this.gnuplot_func = "(5*x*x)";
+            this.line_func = "5x^2";
             break;
         case 2:
             this.dim_error_flag = false;
             this.plot_flag = true;
             this.dim_num = dim_num;
-            this.gnuplot_func = "5*x*x + 10*y*y";
-            this.line_func = "5(x^2) + 10(y^2)";
+            this.gnuplot_func = "(5*x*x + 10*y*y)";
+            this.line_func = "5x^2 + 10y^2";
             break;
         default:
             if (dim_num < 1) {
@@ -152,10 +162,10 @@ public class GA { // главный класс программы
         if (!dim_error_flag) {
             init_first_gen();
             process();
-            System.out.printf("max in (%.3f", points.get(0).x_value.get(0));
+            System.out.printf("max in (%.3f", Math.max(0, points.get(0).x_value.get(0)));
             for (int jt = 1; jt < dim_num; ++jt)
-                System.out.printf(",%.3f", points.get(0).x_value.get(jt));
-            System.out.printf(",%.3f)\n", points.get(0).y_value);
+                System.out.printf(",%.3f", Math.max(0, points.get(0).x_value.get(jt)));
+            System.out.printf(",%.3f)\n", Math.max(0, points.get(0).y_value));
             if (plot_flag)
                 plot();
         }
@@ -189,7 +199,7 @@ public class GA { // главный класс программы
         try {
             FileWriter fileWriter = new FileWriter("out/points.dat");
             PrintWriter printWriter = new PrintWriter(fileWriter);
-            Collections.reverse(points);
+            Collections.sort(points);
             to_file(printWriter);// вывод точек в файл
             for (int it = 0; it < step_count; ++it) // основной цикл (итерация по эпохам)
             {
@@ -223,7 +233,7 @@ public class GA { // главный класс программы
 
                 int jt = ThreadLocalRandom.current().nextInt(0, tournament); // выбор родителя с учетом совпадений
                 while ((it == jt) || used_flag[it][jt])
-                    ThreadLocalRandom.current().nextInt(0, tournament);
+                    jt = ThreadLocalRandom.current().nextInt(0, tournament);
                 used_flag[it][jt] = true;
 
                 point new_point = new point();
@@ -276,7 +286,7 @@ public class GA { // главный класс программы
                                          // изначальное количество точек
     {
         // точки сортируются по неубыванию, после чего первые элементы удаляются
-        Collections.reverse(points);
+        Collections.sort(points);
         while (points.size() > size) {
             points.remove(points.size() - 1);
         }
@@ -286,7 +296,7 @@ public class GA { // главный класс программы
     {
         GA test = new GA(50, // размер популяции
                 2, // количество измерений
-                50, // количество итераций
+                40, // количество итераций
                 -5.12, 5.12, // границы
                 0.5, // alpha для BLX-alpha
                 0.5, // вероятность кроссинговера

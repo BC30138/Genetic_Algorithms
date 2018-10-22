@@ -3,7 +3,7 @@
     "runner": "terminal",
     "tasks": [
         {
-            "label": "JavaBuild",
+            "label": "Build",
             "command": "javac",
             "isBuildCommand": true,
             "isShellCommand": true,
@@ -34,8 +34,9 @@
                 ]
             }
         },
+
         {
-            "label": "JavaRun",
+            "label": "Run",
             "command": "java",
             "isBuildCommand": true,
             "isShellCommand": true,
@@ -47,8 +48,9 @@
             ],
             "problemMatcher": {}
         },
+        
         {
-            "label": "JavaBuildRun",
+            "label": "BuildRun",
             "command": "bash",
             "isBuildCommand": true,
             "isShellCommand": true,
