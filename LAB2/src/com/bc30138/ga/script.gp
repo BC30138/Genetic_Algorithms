@@ -1,9 +1,9 @@
-set term gif animate delay 15 font 'Helvetica,20' size 1024,500
+set term gif animate delay 15 font 'Helvetica,18' size 1024,600
 set xlabel 'X'
 set ylabel 'Y'
 set zlabel 'Z'
 set ztics (0,150,300) 
-set view 30,40 
+set view 40,40 
 set key spacing 1.5
 set output 'searchprocess.gif'
 set zrange [-0.5:400]

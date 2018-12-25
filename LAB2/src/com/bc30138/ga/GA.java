@@ -77,14 +77,14 @@ public class GA { // главный класс программы
             try {
                 FileWriter gnuscrWriter = new FileWriter("src/com/bc30138/ga/script.gp");
                 PrintWriter gnuWriter = new PrintWriter(gnuscrWriter);
-                gnuWriter.print("set term gif animate delay 15 font 'Helvetica,20' size 1024,500\n");
+                gnuWriter.print("set term gif animate delay 15 font 'Helvetica,18' size 1024,600\n");
                 // gnuWriter.print("set pm3d \n");
                 // gnuWriter.print("set hidden3d \n");
                 gnuWriter.print("set xlabel 'X'\n");
                 gnuWriter.print("set ylabel 'Y'\n");
                 gnuWriter.print("set zlabel 'Z'\n");
                 gnuWriter.print("set ztics (0,150,300) \n");
-                gnuWriter.print("set view 30,40 \n");
+                gnuWriter.print("set view 40,40 \n");
                 gnuWriter.print("set key spacing 1.5\n");
                 gnuWriter.print("set output 'searchprocess.gif'\n");
                 gnuWriter.printf("set zrange [-0.5:400]\n");

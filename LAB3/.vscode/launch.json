@@ -13,7 +13,8 @@
             "console": "internalConsole",
             "stopOnEntry": false,
             "mainClass": "",
+            "classPaths": ["bin/"],
             "args": ""
-        },
+        }
     ]
 }
